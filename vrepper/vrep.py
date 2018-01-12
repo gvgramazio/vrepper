@@ -31,11 +31,10 @@ import struct
 import sys
 import os
 import ctypes as ct
-from .vrepConst import *
-
-from version import VERSION, ARCH
 
 #load library
+from vrepper.version import VERSION, ARCH
+
 libsimx = None
 try:
     file_extension = '.so'
