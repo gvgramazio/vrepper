@@ -4,7 +4,8 @@
 
 # import the vrep library
 from vrepper import vrep
-from vrepper.vrepConst import simx_opmode_blocking, simx_opmode_oneshot
+from vrepper.vrepConst import simx_opmode_blocking, simx_opmode_oneshot, sim_handle_all, simx_headeroffset_server_state, \
+    sim_scripttype_childscript, simx_return_ok
 
 import functools
 import subprocess as sp
@@ -172,7 +173,7 @@ class vrepper():
 
         # Now try to retrieve data in a blocking fashion (i.e. a service call):
         objs, = check_ret(self.simxGetObjects(
-            vrep.sim_handle_all,
+            sim_handle_all,
             blocking))
 
         print('(vrepper)Number of objects in the scene: ', len(objs))
@@ -180,7 +181,7 @@ class vrepper():
         # Now send some data to V-REP in a non-blocking fashion:
         self.simxAddStatusbarMessage(
             '(vrepper)Hello V-REP!',
-            vrep.simx_opmode_oneshot)
+            oneshot)
 
         # setup a useless signal
         self.simxSetIntegerSignal('asdf', 1, blocking)
@@ -232,7 +233,7 @@ class vrepper():
 
             # check server state (within the received message)
             e = self.simxGetInMessageInfo(
-                vrep.simx_headeroffset_server_state)
+                simx_headeroffset_server_state)
 
             # check bit0
             not_stopped = e[1] & 1
@@ -315,7 +316,7 @@ class vrepper():
 
         return check_ret(self.simxCallScriptFunction(
             script_name,
-            vrep.sim_scripttype_childscript,
+            sim_scripttype_childscript,
             function_name,
             params[0],  # integers
             params[1],  # floats
@@ -334,7 +335,7 @@ def check_ret(ret_tuple, ignore_one=False):
     else:
         ret = ret_tuple[0]
 
-    if (not ignore_one and ret != vrep.simx_return_ok) or (ignore_one and ret > 1):
+    if (not ignore_one and ret != simx_return_ok) or (ignore_one and ret > 1):
         raise RuntimeError('retcode(' + str(ret) + ') not OK, API call failed. Check the paramters!')
 
     return ret_tuple[1:] if istuple else None
