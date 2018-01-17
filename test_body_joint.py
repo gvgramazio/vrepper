@@ -1,8 +1,8 @@
 import os,math,time
-from vrepper import vrepper
+from vrepper import core
 # sorry but that's how the namespace works
 
-venv = vrepper.vrepper(headless=True)
+venv = core.vrepper(headless=True)
 venv.start()
 
 # load scene

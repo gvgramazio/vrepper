@@ -3,20 +3,8 @@
 # Qin Yongliang 20170410
 
 # import the vrep library
-try:
-    print('trying to import vrep...')
-    from . import vrep
-
-    print('vrep imported.')
-except:
-    print ('--------------------------------------------------------------')
-    print ('"vrep.py" could not be imported. This means very probably that')
-    print ('either "vrep.py" or the remoteApi library could not be found.')
-    print ('Make sure both are in the same folder as this file,')
-    print ('or appropriately adjust the file "vrep.py"')
-    print ('--------------------------------------------------------------')
-    print ('')
-    raise
+from vrepper import vrep
+from vrepper.vrepConst import simx_opmode_blocking, simx_opmode_oneshot
 
 import functools
 import subprocess as sp
@@ -92,8 +80,8 @@ class instance():
 import types, random
 import numpy as np
 
-blocking = vrep.simx_opmode_blocking
-oneshot = vrep.simx_opmode_oneshot
+blocking = simx_opmode_blocking
+oneshot = simx_opmode_oneshot
 
 
 class vrepper():
@@ -164,7 +152,7 @@ class vrepper():
         # try to connect to V-REP instance via socket
         retries = 0
         while True:
-            print ('(vrepper)trying to connect to server on port', self.port_num, 'retry:', retries)
+            print('(vrepper)trying to connect to server on port', self.port_num, 'retry:', retries)
             # vrep.simxFinish(-1) # just in case, close all opened connections
             self.cid = self.simxStart(
                 '127.0.0.1', self.port_num,
@@ -174,7 +162,7 @@ class vrepper():
                 commThreadCycleInMs=0)  # Connect to V-REP
 
             if self.cid != -1:
-                print ('(vrepper)Connected to remote API server!')
+                print('(vrepper)Connected to remote API server!')
                 break
             else:
                 retries += 1
@@ -187,7 +175,7 @@ class vrepper():
             vrep.sim_handle_all,
             blocking))
 
-        print ('(vrepper)Number of objects in the scene: ', len(objs))
+        print('(vrepper)Number of objects in the scene: ', len(objs))
 
         # Now send some data to V-REP in a non-blocking fashion:
         self.simxAddStatusbarMessage(

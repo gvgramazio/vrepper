@@ -1,5 +1,5 @@
 import vrepper
-from vrepper.vrepper import vrepper
+from vrepper.core import vrepper
 
 import os,time
 import numpy as np

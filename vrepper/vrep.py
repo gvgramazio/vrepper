@@ -47,6 +47,7 @@ try:
     else:
         file_extension = '.so'
     libfullpath = os.path.join(os.path.dirname(__file__), 'remoteApi-{}-{}{}'.format(VERSION, ARCH, file_extension))
+    print ("Trying to load VREP dll from here:",libfullpath)
     libsimx = ct.CDLL(libfullpath)
 except:
     print ('----------------------------------------------------')
