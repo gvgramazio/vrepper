@@ -325,6 +325,26 @@ class vrepper():
             blocking
         ))
 
+    def _convert_byte_image_to_color(self, res, img):
+        reds = np.zeros(res[0] * res[1], dtype=np.uint8)
+        greens = np.zeros(res[0] * res[1], dtype=np.uint8)
+        blues = np.zeros(res[0] * res[1], dtype=np.uint8)
+        for i in range(0, len(img), 3):
+            reds[int(i / 3)] = img[i] & 255
+            greens[int(i / 3)] = img[i + 1] & 255
+            blues[int(i / 3)] = img[i + 2] & 255
+
+        img_out = np.zeros((res[0], res[1], 3), dtype=np.uint8)
+        img_out[:, :, 0] = np.array(reds).reshape(res)
+        img_out[:, :, 1] = np.array(greens).reshape(res)
+        img_out[:, :, 2] = np.array(blues).reshape(res)
+
+        return img_out
+
+    def get_image(self, object_id):
+        res, img = check_ret(self.simxGetVisionSensorImage(object_id, 0, blocking))
+        return self._convert_byte_image_to_color(res, img)
+
 
 # check return tuple, raise error if retcode is not OK,
 # return remaining data otherwise
