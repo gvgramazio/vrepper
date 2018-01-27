@@ -2,13 +2,20 @@
 
 THIS IS A FORK FROM https://github.com/ctmakro/vrepper, WITH SOME ADDITIONAL FEATURES:
 
-(I created a pull request to the original repo, but the author hasn't accepted yet)
 - Linux support
 - versioned V-Rep libraries, so you don't get any weird version conflicts
 - Python 2.7 support
 - access to joint angles (reading/writing)
 - access to synchronous/non-synchronous simuation
 - PEP-8 conformity 
+
+
+^ these have now been merged by the original author
+
+NEW FEATURES (2018 Jan 27, v0.0.4):
+- getting images from a V-REP simulated camera
+- getting depth maps from simulated camera
+- new example with real robot arm
 
 
 Tethered V-REP (using V-REP as a remote controlled multi-body simulator) in Python.
