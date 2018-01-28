@@ -5,7 +5,7 @@
 # import the vrep library
 from vrepper import vrep
 from vrepper.vrepConst import simx_opmode_blocking, simx_opmode_oneshot, sim_handle_all, simx_headeroffset_server_state, \
-    sim_scripttype_childscript, simx_return_ok
+    sim_scripttype_childscript, simx_return_ok, sim_jointfloatparam_velocity
 
 import functools
 import subprocess as sp
@@ -434,6 +434,15 @@ class vrepobject():
             )
         )
         return force
+
+    def get_joint_velocity(self):
+        self._check_joint()
+        vel = check_ret(self.env.simxGetObjectFloatParameter(
+            self.handle,
+            sim_jointfloatparam_velocity,
+            blocking
+        ))
+        return vel
 
     def read_force_sensor(self):
         state, forceVector, torqueVector = check_ret(self.env.simxReadForceSensor(
