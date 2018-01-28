@@ -345,6 +345,37 @@ class vrepper():
         res, img = check_ret(self.simxGetVisionSensorImage(object_id, 0, blocking))
         return self._convert_byte_image_to_color(res, img)
 
+    def _convert_depth_to_image(self, res, depth):
+        reshaped_scaled = 255 - np.array(depth).reshape(res) * 255  # because is in range [0,1] and inverted
+        rounded = np.around(reshaped_scaled, 0).astype(np.uint8)
+        return rounded
+
+    def _convert_depth_to_rgb(self, res, depth):
+        rounded = self._convert_depth_to_image(res, depth)
+        img = np.zeros((res[0], res[1], 3), dtype=np.uint8)
+        img[:, :, 0] = rounded
+        img[:, :, 1] = rounded
+        img[:, :, 2] = rounded
+        return img
+
+    def get_depth_image(self, object_id):
+        res, depth = check_ret(self.simxGetVisionSensorDepthBuffer(object_id, blocking))
+        return self._convert_depth_to_image(res, depth)
+
+    def get_depth_image_as_rgb(self, object_id):
+        res, depth = check_ret(self.simxGetVisionSensorDepthBuffer(object_id, blocking))
+        return self._convert_depth_to_rgb(res, depth)
+
+    def get_image_and_depth(self, object_id):
+        img = self.get_image(object_id)
+        depth = self.get_depth_image(object_id)
+
+        out = np.zeros((img.shape[0], img.shape[1], 4), dtype=np.uint8)
+        out[:, :, :3] = img
+        out[:, :, 3] = depth
+
+        return out
+
 
 # check return tuple, raise error if retcode is not OK,
 # return remaining data otherwise
