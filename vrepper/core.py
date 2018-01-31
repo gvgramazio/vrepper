@@ -11,6 +11,7 @@ import functools
 import subprocess as sp
 import warnings
 from inspect import getargspec
+import os
 
 from numpy import deg2rad, rad2deg
 
@@ -49,14 +50,19 @@ def deprecated(msg=''):
 
 # the class holding a subprocess instance.
 class instance():
-    def __init__(self, args):
+    def __init__(self, args, suppress_output=True):
         self.args = args
+        self.suppress_output = suppress_output
         list_of_instances.append(self)
 
     def start(self):
         print('(instance) starting...')
         try:
-            self.inst = sp.Popen(self.args)
+            if self.suppress_output:
+                stdout = open(os.devnull, 'w')
+            else:
+                stdout = sp.STDOUT
+            self.inst = sp.Popen(self.args, stdout=stdout, stderr=sp.STDOUT)
         except EnvironmentError:
             print('(instance) Error: cannot find executable at', self.args[0])
             raise
@@ -86,7 +92,7 @@ oneshot = simx_opmode_oneshot
 
 
 class vrepper():
-    def __init__(self, port_num=None, dir_vrep='', headless=False):
+    def __init__(self, port_num=None, dir_vrep='', headless=False, suppress_output=True):
         if port_num is None:
             port_num = int(random.random() * 1000 + 19999)
 
@@ -113,7 +119,7 @@ class vrepper():
             args.append('-h')
 
         # instance created but not started.
-        self.instance = instance(args)
+        self.instance = instance(args, suppress_output)
 
         self.cid = -1
         # clientID of the instance when connected to server,
