@@ -441,3 +441,9 @@ class vrepobject():
     def _check_joint(self):
         if not self.is_joint:
             raise Exception("Trying to call a joint function on a non-joint object.")
+
+    def get_global_variable(self, name, is_first_time):
+        if is_first_time:
+            return vrep.simxGetFloatSignal(self.cid, name, vrep.simx_opmode_streaming)
+        else:
+            return vrep.simxGetFloatSignal(self.cid, name, vrep.simx_opmode_buffer)
