@@ -15,6 +15,14 @@ import os
 
 from numpy import deg2rad, rad2deg
 
+
+
+import psutil
+import os
+import socket
+from contextlib import closing
+
+
 list_of_instances = []
 import atexit
 
@@ -75,8 +83,11 @@ class instance():
     def end(self):
         print('(instance) terminating...')
         if self.isAlive():
-            self.inst.terminate()
-            retcode = self.inst.wait()
+            pid = self.inst.pid
+            parent = psutil.Process(pid)
+            for _ in parent.children(recursive=True):
+                _.kill()
+            retcode = parent.kill()
         else:
             retcode = self.inst.returncode
         print('(instance) retcode:', retcode)
@@ -94,7 +105,7 @@ oneshot = simx_opmode_oneshot
 class vrepper():
     def __init__(self, port_num=None, dir_vrep='', headless=False, suppress_output=True):
         if port_num is None:
-            port_num = int(random.random() * 1000 + 19999)
+            port_num = self.find_free_port_to_use()
 
         self.port_num = port_num
 
@@ -147,6 +158,11 @@ class vrepper():
 
         for name in vrep_methods:
             assign_from_vrep_to_self(name)
+
+    def find_free_port_to_use(self): #https://stackoverflow.com/questions/1365265/on-localhost-how-do-i-pick-a-free-port-number
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+            s.bind(('', 0))
+            return s.getsockname()[1]
 
     # start everything
     def start(self):
@@ -331,6 +347,12 @@ class vrepper():
             blocking
         ))
 
+    def get_global_variable(self, name, is_first_time):
+        if is_first_time:
+            return vrep.simxGetFloatSignal(self.cid, name, vrep.simx_opmode_streaming)
+        else:
+            return vrep.simxGetFloatSignal(self.cid, name, vrep.simx_opmode_buffer)
+
     def _convert_byte_image_to_color(self, res, img):
         reds = np.zeros(res[0] * res[1], dtype=np.uint8)
         greens = np.zeros(res[0] * res[1], dtype=np.uint8)
@@ -381,7 +403,6 @@ class vrepper():
         out[:, :, 3] = depth
 
         return out
-
 
 # check return tuple, raise error if retcode is not OK,
 # return remaining data otherwise
@@ -507,3 +528,9 @@ class vrepobject():
     def _check_joint(self):
         if not self.is_joint:
             raise Exception("Trying to call a joint function on a non-joint object.")
+
+    def get_global_variable(self, name, is_first_time):
+        if is_first_time:
+            return vrep.simxGetFloatSignal(self.cid, name, vrep.simx_opmode_streaming)
+        else:
+            return vrep.simxGetFloatSignal(self.cid, name, vrep.simx_opmode_buffer)
