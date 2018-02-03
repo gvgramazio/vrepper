@@ -5,12 +5,13 @@
 # import the vrep library
 from vrepper import vrep
 from vrepper.vrepConst import simx_opmode_blocking, simx_opmode_oneshot, sim_handle_all, simx_headeroffset_server_state, \
-    sim_scripttype_childscript, simx_return_ok
+    sim_scripttype_childscript, simx_return_ok, sim_jointfloatparam_velocity
 
 import functools
 import subprocess as sp
 import warnings
 from inspect import getargspec
+import os
 
 from numpy import deg2rad, rad2deg
 
@@ -57,16 +58,19 @@ def deprecated(msg=''):
 
 # the class holding a subprocess instance.
 class instance():
-    def __init__(self, args):
+    def __init__(self, args, suppress_output=True):
         self.args = args
+        self.suppress_output = suppress_output
         list_of_instances.append(self)
 
     def start(self):
         print('(instance) starting...')
         try:
-            FNULL = open(os.devnull, 'w')
-            self.inst = sp.Popen(self.args, stdout=FNULL, stderr=sp.STDOUT)
-
+            if self.suppress_output:
+                stdout = open(os.devnull, 'w')
+            else:
+                stdout = sp.STDOUT
+            self.inst = sp.Popen(self.args, stdout=stdout, stderr=sp.STDOUT)
         except EnvironmentError:
             print('(instance) Error: cannot find executable at', self.args[0])
             raise
@@ -99,7 +103,7 @@ oneshot = simx_opmode_oneshot
 
 
 class vrepper():
-    def __init__(self, port_num=None, dir_vrep='', headless=False):
+    def __init__(self, port_num=None, dir_vrep='', headless=False, suppress_output=True):
         if port_num is None:
             port_num = self.find_free_port_to_use()
 
@@ -126,7 +130,7 @@ class vrepper():
             args.append('-h')
 
         # instance created but not started.
-        self.instance = instance(args)
+        self.instance = instance(args, suppress_output)
 
         self.cid = -1
         # clientID of the instance when connected to server,
@@ -349,6 +353,56 @@ class vrepper():
         else:
             return vrep.simxGetFloatSignal(self.cid, name, vrep.simx_opmode_buffer)
 
+    def _convert_byte_image_to_color(self, res, img):
+        reds = np.zeros(res[0] * res[1], dtype=np.uint8)
+        greens = np.zeros(res[0] * res[1], dtype=np.uint8)
+        blues = np.zeros(res[0] * res[1], dtype=np.uint8)
+        for i in range(0, len(img), 3):
+            reds[int(i / 3)] = img[i] & 255
+            greens[int(i / 3)] = img[i + 1] & 255
+            blues[int(i / 3)] = img[i + 2] & 255
+
+        img_out = np.zeros((res[0], res[1], 3), dtype=np.uint8)
+        img_out[:, :, 0] = np.array(reds).reshape(res)
+        img_out[:, :, 1] = np.array(greens).reshape(res)
+        img_out[:, :, 2] = np.array(blues).reshape(res)
+
+        return img_out
+
+    def get_image(self, object_id):
+        res, img = check_ret(self.simxGetVisionSensorImage(object_id, 0, blocking))
+        return self._convert_byte_image_to_color(res, img)
+
+    def _convert_depth_to_image(self, res, depth):
+        reshaped_scaled = 255 - np.array(depth).reshape(res) * 255  # because is in range [0,1] and inverted
+        rounded = np.around(reshaped_scaled, 0).astype(np.uint8)
+        return rounded
+
+    def _convert_depth_to_rgb(self, res, depth):
+        rounded = self._convert_depth_to_image(res, depth)
+        img = np.zeros((res[0], res[1], 3), dtype=np.uint8)
+        img[:, :, 0] = rounded
+        img[:, :, 1] = rounded
+        img[:, :, 2] = rounded
+        return img
+
+    def get_depth_image(self, object_id):
+        res, depth = check_ret(self.simxGetVisionSensorDepthBuffer(object_id, blocking))
+        return self._convert_depth_to_image(res, depth)
+
+    def get_depth_image_as_rgb(self, object_id):
+        res, depth = check_ret(self.simxGetVisionSensorDepthBuffer(object_id, blocking))
+        return self._convert_depth_to_rgb(res, depth)
+
+    def get_image_and_depth(self, object_id):
+        img = self.get_image(object_id)
+        depth = self.get_depth_image(object_id)
+
+        out = np.zeros((img.shape[0], img.shape[1], 4), dtype=np.uint8)
+        out[:, :, :3] = img
+        out[:, :, 3] = depth
+
+        return out
 
 # check return tuple, raise error if retcode is not OK,
 # return remaining data otherwise
@@ -438,6 +492,15 @@ class vrepobject():
             )
         )
         return force
+
+    def get_joint_velocity(self):
+        self._check_joint()
+        vel = check_ret(self.env.simxGetObjectFloatParameter(
+            self.handle,
+            sim_jointfloatparam_velocity,
+            blocking
+        ))
+        return vel
 
     def read_force_sensor(self):
         state, forceVector, torqueVector = check_ret(self.env.simxReadForceSensor(
