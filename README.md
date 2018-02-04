@@ -16,6 +16,8 @@ NEW FEATURES (2018 Jan 27, v0.0.4):
 - getting images from a V-REP simulated camera
 - getting depth maps from simulated camera
 - new example with real robot arm
+
+NEW FEATURES (2018 Feb 04, v0.0.5):
 - less bloat (removed the files that aren't necessary for this library and which are included with the V-Rep installation anyway)
 - better V-Rep executable control (i.e. less noisy logging, better killing and instanciating, and propoer port number search all thanks to @CrazyHeex )
 
