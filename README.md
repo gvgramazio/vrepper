@@ -16,12 +16,18 @@ NEW FEATURES (2018 Jan 27, v0.0.4):
 - getting images from a V-REP simulated camera
 - getting depth maps from simulated camera
 - new example with real robot arm
-
+- less bloat (removed the files that aren't necessary for this library and which are included with the V-Rep installation anyway)
+- better V-Rep executable control (i.e. less noisy logging, better killing and instanciating, and propoer port number search all thanks to @CrazyHeex )
 
 Tethered V-REP (using V-REP as a remote controlled multi-body simulator) in Python.
 
 The Python binding (`vrep.py` and `vrepConst.py`) and the driver libraries (`remoteApi.dll`, `remoteApi.dylib`, and `remoteApi.so`) are copied as-is from V-REP PRO EDU V3.4
 
+## Prerequisites
+
+Of course in order to use this, you might want to install V-Rep first. If you work in academia or do anything with education, you can get a free educational copy over here: http://www.coppeliarobotics.com/downloads.html  
+
+s
 ## Usage
 
 Add the path to your V-REP installation to your `PATH`:
