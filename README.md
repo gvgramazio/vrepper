@@ -55,6 +55,10 @@ $ ipython test_body_joint.py #(run the example)
 
 The last command will start V-REP in headless mode (no GUI) and run a simple simulation step-by-step. Then it will shut itself down and exit.
 
+## A note on PyCharm
+
+For those of you using the PyCharm IDE and are having issues running their experiments using the internal Python shell... that's normal. Somewhat. If you start PyCharm from the start menu then it will **NOT** keep any environmental variables (like the `export PATH...` line from above that you should have put in your `~/.bashrc` or `~/.zshrc`). But if you **start PyCharm from a shell** that solves the issue. It's a bit of a nasty workaround, but for the moment that's the easier solution for me (rather than editing the run configuration of every single experiment by hand).
+
 ## Why should you use V-REP
 
 - build your model with its GUI tools
