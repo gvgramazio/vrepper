@@ -9,7 +9,15 @@ here = path.abspath(path.dirname(__file__))
 # with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 #     long_description = f.read()
 
-long_description='n/a'
+long_description="""If you have Python and V-Rep the robot simulator 
+software installed, why not combine both? This library let's you 
+access the V-Rep API in a bit more humane way the native implementation 
+(V-Rep ships with its own Python API, but it's a bit harder to use). 
+This library gives you a lot of convenience and includes an example for 
+OpenAI Gym integration. This codebase is an extension of ctmakro's
+https://github.com/ctmakro/vrepper who provided all the basic functions -
+so without their effort this wouldn't have been possible.
+"""
 
 setup(
     name='vrepper',
@@ -19,15 +27,15 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.5',
 
-    description='V-REP python tethering wrapper',
+    description='V-REP python wrapper',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/ctmakro/vrepper',
+    url='https://github.com/fgolemo/vrepper',
 
     # Author details
-    author='Qin Yongliang',
-    author_email='ctmakro@gmail.com',
+    author='Florian Golemo',
+    author_email='fgolemo@gmail.com',
 
     # Choose your license
     license='MIT',
@@ -38,7 +46,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
@@ -51,15 +59,16 @@ setup(
         # that you indicate whether you support Python 2, Python 3 or both.
         # 'Programming Language :: Python :: 2',
         # 'Programming Language :: Python :: 2.6',
-        # 'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 2.7',
         # 'Programming Language :: Python :: 3',
         # 'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
 
     # What does your project relate to?
-    keywords='robotics vrep control simulation',
+    keywords='robotics vrep control simulation gym',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
