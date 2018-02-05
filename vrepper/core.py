@@ -15,13 +15,10 @@ import os
 
 from numpy import deg2rad, rad2deg
 
-
-
 import psutil
 import os
 import socket
 from contextlib import closing
-
 
 list_of_instances = []
 import atexit
@@ -118,6 +115,9 @@ class vrepper():
         else:
             path_vrep = dir_vrep + 'vrep'
         print('(vrepper) path to your V-REP executable is:', path_vrep)
+        if path_vrep is None:
+            raise Exception("Sorry I couldn't find V-Rep binary. "
+                            "Please make sure it's in the PATH environmental variable")
 
         # start V-REP in a sub process
         # vrep.exe -gREMOTEAPISERVERSERVICE_PORT_DEBUG_PREENABLESYNC
@@ -159,7 +159,8 @@ class vrepper():
         for name in vrep_methods:
             assign_from_vrep_to_self(name)
 
-    def find_free_port_to_use(self): #https://stackoverflow.com/questions/1365265/on-localhost-how-do-i-pick-a-free-port-number
+    def find_free_port_to_use(
+            self):  # https://stackoverflow.com/questions/1365265/on-localhost-how-do-i-pick-a-free-port-number
         with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
             s.bind(('', 0))
             return s.getsockname()[1]
@@ -169,13 +170,13 @@ class vrepper():
         if self.started == True:
             raise RuntimeError('you should not call start() more than once')
 
-        print('(vrepper)starting an instance of V-REP...')
+        print('(vrepper) starting an instance of V-REP...')
         self.instance.start()
 
         # try to connect to V-REP instance via socket
         retries = 0
         while True:
-            print('(vrepper)trying to connect to server on port', self.port_num, 'retry:', retries)
+            print('(vrepper) trying to connect to server on port', self.port_num, 'retry:', retries)
             # vrep.simxFinish(-1) # just in case, close all opened connections
             self.cid = self.simxStart(
                 '127.0.0.1', self.port_num,
@@ -185,20 +186,20 @@ class vrepper():
                 commThreadCycleInMs=0)  # Connect to V-REP
 
             if self.cid != -1:
-                print('(vrepper)Connected to remote API server!')
+                print('(vrepper) Connected to remote API server!')
                 break
             else:
                 retries += 1
                 if retries > 15:
                     self.end()
-                    raise RuntimeError('(vrepper)Unable to connect to V-REP after 15 retries.')
+                    raise RuntimeError('(vrepper) Unable to connect to V-REP after 15 retries.')
 
         # Now try to retrieve data in a blocking fashion (i.e. a service call):
         objs, = check_ret(self.simxGetObjects(
             sim_handle_all,
             blocking))
 
-        print('(vrepper)Number of objects in the scene: ', len(objs))
+        print('(vrepper) Number of objects in the scene: ', len(objs))
 
         # Now send some data to V-REP in a non-blocking fashion:
         self.simxAddStatusbarMessage(
@@ -404,6 +405,55 @@ class vrepper():
 
         return out
 
+    def get_collision_handle(self, name_of_collision_obj):
+        """ In order to use this you first have to open the scene in V-Rep, then
+            click on "calculation module properties" on the left side (the button
+            that looks like "f(x)"), then click "add new collision object", chose the
+            two things between which you want to check for collision (one of them can be a collection
+            which you can create in yet another window), and finally double click on the new
+            collision object in order to rename it to something more catchy than "Collision".
+            You can find more information here:
+            http://www.coppeliarobotics.com/helpFiles/en/collisionDetection.htm
+            Also don't forget to save the scene after adding the collision object.
+
+        :param name_of_collision_obj: the "#" is added automatically at the end
+        :return: collision_handle (this is an integer that you need for check_collision)
+        """
+        return check_ret(self.simxGetCollisionHandle(name_of_collision_obj + "#", blocking))[0]
+
+    def check_collision(self, collision_handle):
+        """ At any point in time call this function to get a boolean value if the
+            collision object is currently detecting a collision. True for collision.
+
+        :param collision_handle: integer, the handle that you obtaind from
+                                    "get_collision_handle(name_of_collision_obj)"
+        :return: boolean
+        """
+        return check_ret(self.simxReadCollision(collision_handle, blocking))[0]
+
+    def get_collision_object(self, name_of_collision_obj):
+        """ this is effectively the same as "get_collision_handle" but instead of an
+            integer (the handle) it instead returns an object that has a ".is_colliding()"
+            function, which is super marginally more convenient.
+
+        :param name_of_collision_obj: string, name of the collision object in V-Rep
+        :return: Collision object that you can check with ".is_colliding()->bool"
+        """
+
+        handle = check_ret(self.simxGetCollisionHandle(name_of_collision_obj + "#", blocking))[0]
+        col = Collision(env=self, handle=handle)
+        return col
+
+
+class Collision(object):
+    def __init__(self, env, handle):
+        self.handle = handle
+        self.env = env
+
+    def is_colliding(self):
+        return check_ret(self.env.simxReadCollision(self.handle, blocking))[0]
+
+
 # check return tuple, raise error if retcode is not OK,
 # return remaining data otherwise
 def check_ret(ret_tuple, ignore_one=False):
@@ -472,6 +522,15 @@ class vrepobject():
             self.handle,
             -deg2rad(angle),
             blocking))
+
+    def set_position(self, x, y, z):
+        """
+        Set object to specific position (should never be done with joints)
+        :param pos:  tuple or list with 3 coordinates
+        :return: None
+        """
+        pos = (x, y, z)
+        return check_ret(self.env.simxSetObjectPosition(self.handle, -1, pos, blocking))
 
     def get_joint_angle(self):
         self._check_joint()
