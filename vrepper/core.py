@@ -3,103 +3,25 @@
 # Qin Yongliang 20170410
 
 # import the vrep library
-from vrepper import vrep
-from vrepper.vrepConst import simx_opmode_blocking, simx_opmode_oneshot, sim_handle_all, simx_headeroffset_server_state, \
-    sim_scripttype_childscript, simx_return_ok, sim_jointfloatparam_velocity
+from vrepper.lib import vrep
+from vrepper.lib.vrepConst import sim_handle_all, simx_headeroffset_server_state, \
+    sim_scripttype_childscript
 
-import functools
-import subprocess as sp
-import warnings
 from inspect import getargspec
-import os
-
-from numpy import deg2rad, rad2deg
-
-import psutil
-import os
+import types
+import numpy as np
 import socket
 from contextlib import closing
 
-list_of_instances = []
-import atexit
+from vrepper.utils import check_ret, blocking, oneshot, instance, deprecated
+from vrepper.vrep_object import vrepobject
 
 
-def cleanup():  # kill all spawned subprocesses on exit
-    for i in list_of_instances:
-        i.end()
+class vrepper(object):
+    """ class holding a v-rep simulation environment and
+    allowing to call all the V-Rep remote functions ("simx..")
+    """
 
-
-atexit.register(cleanup)
-
-
-def deprecated(msg=''):
-    def dep(func):
-        '''This is a decorator which can be used to mark functions
-        as deprecated. It will result in a warning being emitted
-        when the function is used.'''
-
-        @functools.wraps(func)
-        def new_func(*args, **kwargs):
-            warnings.warn_explicit(
-                "Call to deprecated function {}. {}".format(func.__name__, msg),
-                category=DeprecationWarning,
-                filename=func.func_code.co_filename,
-                lineno=func.func_code.co_firstlineno + 1
-            )
-            return func(*args, **kwargs)
-
-        return new_func
-
-    return deprecated
-
-
-# the class holding a subprocess instance.
-class instance():
-    def __init__(self, args, suppress_output=True):
-        self.args = args
-        self.suppress_output = suppress_output
-        list_of_instances.append(self)
-
-    def start(self):
-        print('(instance) starting...')
-        try:
-            if self.suppress_output:
-                stdout = open(os.devnull, 'w')
-            else:
-                stdout = sp.STDOUT
-            self.inst = sp.Popen(self.args, stdout=stdout, stderr=sp.STDOUT)
-        except EnvironmentError:
-            print('(instance) Error: cannot find executable at', self.args[0])
-            raise
-
-        return self
-
-    def isAlive(self):
-        return True if self.inst.poll() is None else False
-
-    def end(self):
-        print('(instance) terminating...')
-        if self.isAlive():
-            pid = self.inst.pid
-            parent = psutil.Process(pid)
-            for _ in parent.children(recursive=True):
-                _.kill()
-            retcode = parent.kill()
-        else:
-            retcode = self.inst.returncode
-        print('(instance) retcode:', retcode)
-        return self
-
-
-# class holding a v-rep simulation environment.
-import types, random
-import numpy as np
-
-blocking = simx_opmode_blocking
-oneshot = simx_opmode_oneshot
-
-
-class vrepper():
     def __init__(self, port_num=None, dir_vrep='', headless=False, suppress_output=True):
         if port_num is None:
             port_num = self.find_free_port_to_use()
@@ -456,144 +378,3 @@ class Collision(object):
 
     def is_colliding(self):
         return check_ret(self.env.simxReadCollision(self.handle, blocking))[0]
-
-
-# check return tuple, raise error if retcode is not OK,
-# return remaining data otherwise
-def check_ret(ret_tuple, ignore_one=False):
-    istuple = isinstance(ret_tuple, tuple)
-    if not istuple:
-        ret = ret_tuple
-    else:
-        ret = ret_tuple[0]
-
-    if (not ignore_one and ret != simx_return_ok) or (ignore_one and ret > 1):
-        raise RuntimeError('retcode(' + str(ret) + ') not OK, API call failed. Check the paramters!')
-
-    return ret_tuple[1:] if istuple else None
-
-
-class vrepobject():
-    def __init__(self, env, handle, is_joint=True):
-        self.env = env
-        self.handle = handle
-        self.is_joint = is_joint
-
-    def get_orientation(self, relative_to=None):
-        eulerAngles, = check_ret(self.env.simxGetObjectOrientation(
-            self.handle,
-            -1 if relative_to is None else relative_to.handle,
-            blocking))
-        return eulerAngles
-
-    def get_position(self, relative_to=None):
-        position, = check_ret(self.env.simxGetObjectPosition(
-            self.handle,
-            -1 if relative_to is None else relative_to.handle,
-            blocking))
-        return position
-
-    def get_velocity(self):
-        return check_ret(self.env.simxGetObjectVelocity(
-            self.handle,
-            # -1 if relative_to is None else relative_to.handle,
-            blocking))
-        # linearVel, angularVel
-
-    def set_velocity(self, v):
-        self._check_joint()
-        return check_ret(self.env.simxSetJointTargetVelocity(
-            self.handle,
-            v,
-            blocking))
-
-    def set_force(self, f):
-        self._check_joint()
-        return check_ret(self.env.simxSetJointForce(
-            self.handle,
-            f,
-            blocking))
-
-    def set_position_target(self, angle):
-        """
-        Set desired position of a servo
-
-        :param int angle: target servo angle in degrees
-        :return: None if successful, otherwise raises exception
-        """
-        self._check_joint()
-        return check_ret(self.env.simxSetJointTargetPosition(
-            self.handle,
-            -deg2rad(angle),
-            blocking))
-
-    def set_position(self, x, y, z):
-        """
-        Set object to specific position (should never be done with joints)
-        :param pos:  tuple or list with 3 coordinates
-        :return: None
-        """
-        pos = (x, y, z)
-        return check_ret(self.env.simxSetObjectPosition(self.handle, -1, pos, blocking))
-
-    def get_joint_angle(self):
-        self._check_joint()
-        angle = check_ret(
-            self.env.simxGetJointPosition(
-                self.handle,
-                blocking
-            )
-        )
-        return -rad2deg(angle[0])
-
-    def get_joint_force(self):
-        self._check_joint()
-        force = check_ret(
-            self.env.simxGetJointForce(
-                self.handle,
-                blocking
-            )
-        )
-        return force
-
-    def get_joint_velocity(self):
-        self._check_joint()
-        vel = check_ret(self.env.simxGetObjectFloatParameter(
-            self.handle,
-            sim_jointfloatparam_velocity,
-            blocking
-        ))
-        return vel
-
-    def read_force_sensor(self):
-        state, forceVector, torqueVector = check_ret(self.env.simxReadForceSensor(
-            self.handle,
-            blocking))
-
-        if state & 1 == 1:
-            return None  # sensor data not ready
-        else:
-            return forceVector, torqueVector
-
-    def get_vision_image(self):
-        resolution, image = check_ret(self.env.simxGetVisionSensorImage(
-            self.handle,
-            0,  # options=0 -> RGB
-            blocking,
-        ))
-        dim, im = resolution, image
-        nim = np.array(im, dtype='uint8')
-        nim = np.reshape(nim, (dim[1], dim[0], 3))
-        nim = np.flip(nim, 0)  # LR flip
-        nim = np.flip(nim, 2)  # RGB -> BGR
-        return nim
-
-    def _check_joint(self):
-        if not self.is_joint:
-            raise Exception("Trying to call a joint function on a non-joint object.")
-
-    def get_global_variable(self, name, is_first_time):
-        if is_first_time:
-            return vrep.simxGetFloatSignal(self.cid, name, vrep.simx_opmode_streaming)
-        else:
-            return vrep.simxGetFloatSignal(self.cid, name, vrep.simx_opmode_buffer)

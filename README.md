@@ -29,7 +29,9 @@ The Python binding (`vrep.py` and `vrepConst.py`) and the driver libraries (`rem
 
 ## Prerequisites
 
-Of course in order to use this, you might want to install V-Rep first. If you work in academia or do anything with education, you can get a free educational copy over here: http://www.coppeliarobotics.com/downloads.html  
+Of course in order to use this, you might want to install V-Rep first. If you work in academia or do anything with education, you can get a free educational copy over here: http://www.coppeliarobotics.com/downloads.html 
+
+**IMPORTANT:** So version 3.5.0 was just relased and I'm having issues with using the Python API (I'm getting segfaults from V-Rep that I can't debug). So until this is fixed, version 3.5.0 is NOT supported. Please download v.3.4.0 from here: http://www.coppeliarobotics.com/previousversions.html
 
 
 ## Usage
