@@ -1,5 +1,8 @@
 # vrepper
 
+Tethered V-REP (using V-REP as a remote controlled multi-body simulator) in Python.
+
+
 THIS IS A FORK FROM https://github.com/ctmakro/vrepper, WITH SOME ADDITIONAL FEATURES:
 
 - Linux support
@@ -12,26 +15,26 @@ THIS IS A FORK FROM https://github.com/ctmakro/vrepper, WITH SOME ADDITIONAL FEA
 
 ^ these have now been merged by the original author
 
-NEW FEATURES (2018 Jan 27, v0.0.4):
+**NEW FEATURES (2018 Jan 27, v0.0.4):**
 - getting images from a V-REP simulated camera
 - getting depth maps from simulated camera
 - new example with real robot arm
 
-NEW FEATURES (2018 Feb 04, v0.0.5):
+**NEW FEATURES (2018 Feb 04, v0.0.5):**
 - less bloat (removed the files that aren't necessary for this library and which are included with the V-Rep installation anyway)
 - better V-Rep executable control (i.e. less noisy logging, better killing and instanciating, and propoer port number search all thanks to @CrazyHeex )
 - collision detection (this needs a bit work in V-Rep too, see documentation in file "core.py" -> function "def get_collision_handle")
 
-Tethered V-REP (using V-REP as a remote controlled multi-body simulator) in Python.
+**NEW FEATURES (2018 Apr 16, v0.0.6)**
+- added suppot for V-Rep 3.5.0 rev4
 
-The Python binding (`vrep.py` and `vrepConst.py`) and the driver libraries (`remoteApi.dll`, `remoteApi.dylib`, and `remoteApi.so`) are copied as-is from V-REP PRO EDU V3.4
+
+The Python binding (`vrep.py` and `vrepConst.py`) and the driver libraries (`remoteApi.dll`, `remoteApi.dylib`, and `remoteApi.so`) are copied as-is from V-REP PRO EDU V3.5
 
 
 ## Prerequisites
 
 Of course in order to use this, you might want to install V-Rep first. If you work in academia or do anything with education, you can get a free educational copy over here: http://www.coppeliarobotics.com/downloads.html 
-
-**IMPORTANT:** So version 3.5.0 was just relased and I'm having issues with using the Python API (I'm getting segfaults from V-Rep that I can't debug). So until this is fixed, version 3.5.0 is NOT supported. Please download v.3.4.0 from here: http://www.coppeliarobotics.com/previousversions.html
 
 
 ## Usage
