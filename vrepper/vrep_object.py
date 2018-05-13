@@ -56,6 +56,19 @@ class vrepobject():
             -np.deg2rad(angle),
             blocking))
 
+    def force_position(self, angle):
+        """
+        Force desired position of a servo
+
+        :param int angle: target servo angle in degrees
+        :return: None if successful, otherwise raises exception
+        """
+        self._check_joint()
+        return check_ret(self.env.simxSetJointPosition(
+            self.handle,
+            -np.deg2rad(angle),
+            blocking))
+
     def set_position(self, x, y, z):
         """
         Set object to specific position (should never be done with joints)
