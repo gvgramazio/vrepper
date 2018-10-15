@@ -22,7 +22,7 @@ class vrepper(object):
     allowing to call all the V-Rep remote functions ("simx..")
     """
 
-    def __init__(self, port_num=None, dir_vrep='', headless=False, suppress_output=True):
+    def __init__(self, port_num=None, dir_vrep='', headless=False, suppress_output=True, emulate_framebuffer=False):
         if port_num is None:
             port_num = self.find_free_port_to_use()
 
@@ -47,6 +47,9 @@ class vrepper(object):
         # by default the server will start at 19997,
         # use the -g argument if you want to start the server on a different port.
         args = [path_vrep, '-gREMOTEAPISERVERSERVICE_' + str(self.port_num) + '_FALSE_TRUE']
+
+        if emulate_framebuffer:
+            args.insert(0, 'xvfb-run')
 
         if headless:
             args.append('-h')
