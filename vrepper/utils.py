@@ -34,9 +34,9 @@ class instance():
         try:
             if self.suppress_output:
                 stdout = open(os.devnull, 'w')
+                self.inst = sp.Popen(self.args, stdout=stdout, stderr=sp.STDOUT)
             else:
-                stdout = sp.STDOUT
-            self.inst = sp.Popen(self.args, stdout=stdout, stderr=sp.STDOUT)
+                self.inst = sp.Popen(self.args)
         except EnvironmentError:
             print('(instance) Error: cannot find executable at', self.args[0])
             raise
